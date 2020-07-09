@@ -344,8 +344,6 @@
     *
     * This function reads the content of the measurement registers, converting 
     * it and adding the offset specified by the capdac setting.
-    * \param channel the channel for which the measurement must be read.
-    * \param capacitance pointer to variable where the result will be stored.
     * \return #FDC_Error with value based on the successful communication
     * \retval #FDC_OK if device is connected
     * \retval #FDC_DEV_NOT_FOUND if device is not connected

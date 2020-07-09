@@ -15,25 +15,39 @@
     
     #include "cytypes.h"
     
+    /**
+    *   \typedef I2C_ErrorCode
+    *   \brief Error codes returned by the I2C Functions
+    */
     typedef enum {
-        I2C_NO_ERROR,           ///< No error generated
-        I2C_ERROR               ///< Error generated
+        /** No error occurred during I2C communication **/
+        I2C_NO_ERROR,           
+        /** An error occurred during I2C communication **/
+        I2C_ERROR               
     } I2C_ErrorCode;
     
+    /**
+    *   \typedef I2C_Connection
+    *   \brief Values returned to determine if device connected or not.
+    */
     typedef enum {
-        I2C_DEV_CONNECTED,           ///< Device connected
-        I2C_DEV_UNCONNECTED          ///< Device unconnected
+        /** Device is connected **/
+        I2C_DEV_CONNECTED,         
+        /** Device is not connected on the bus **/
+        I2C_DEV_UNCONNECTED         
     } I2C_Connection;
     
     /** \brief Start the I2C peripheral.
     *   
     *   This function starts the I2C peripheral so that it is ready to work.
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_Start(void);
     
     /** \brief Stop the I2C peripheral.
     *   
     *   This function stops the I2C peripheral from working.
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_Stop(void);
     
@@ -45,6 +59,7 @@
     *   \param device_address I2C address of the device to talk to.
     *   \param register_address Address of the register to be read.
     *   \param data Pointer to a variable where the byte will be saved.
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_ReadRegister(uint8_t device_address, 
                                             uint8_t register_address,
@@ -59,6 +74,7 @@
     *   \param register_address Address of the first register to be read.
     *   \param register_count Number of registers we want to read.
     *   \param data Pointer to an array where data will be saved.
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_ReadRegisterMulti(uint8_t device_address,
                                                 uint8_t register_address,
@@ -72,6 +88,7 @@
     *   \param device_address I2C address of the device to talk to.
     *   \param register_address Address of the register to be written.
     *   \param data Data to be written
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_WriteRegister(uint8_t device_address,
                                             uint8_t register_address,
@@ -86,6 +103,7 @@
     *   \param register_address Address of the first register to be written.
     *   \param register_count Number of registers that need to be written.
     *   \param data Array of data to be written
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_WriteRegisterMulti(uint8_t device_address,
                                             uint8_t register_address,
@@ -99,6 +117,7 @@
     *   registers
     *   \param device_address I2C address of the device to talk to.
     *   \param register_address Address of the first register to be written.
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_WriteRegisterNoData(uint8_t device_address,
                                             uint8_t register_address);
@@ -109,7 +128,7 @@
     *   This function checks if a device is connected over the I2C lines.
     *   \param device_address I2C address of the device to be checked.
     *   \param connection pointer where the connection status will be stored
-    *   \retval Returns true (>0) if device is connected.
+    *   \return #I2C_ErrorCode error code value
     */
     I2C_ErrorCode I2C_Peripheral_IsDeviceConnected(uint8_t device_address, I2C_Connection* connection);
     

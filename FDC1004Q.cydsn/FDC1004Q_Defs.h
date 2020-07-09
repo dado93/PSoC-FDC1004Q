@@ -1,5 +1,5 @@
 /**
-*   \file FDC1004Q_RegMap.h
+*   \file FDC1004Q_Defs.h
 *   \brief Register map for the FDC1004Q component.
 *
 *   \author Davide Marzorati
@@ -175,43 +175,76 @@
     // ============================================= 
     
     /**
+    *   \typedef FDC_Error
     *   \brief Errors for the FDC1004Q library.
     */
     typedef enum {
-        FDC_OK,             // <<< No error occurred
-        FDC_COMM_ERR,       // <<< Communication error on I2C bus
-        FDC_DEV_NOT_FOUND,   // <<< Device not found on I2C bus
-        FDC_CONF_ERROR
+        /** No error occurred **/
+        FDC_OK,    
+        /** Communication error on I2C bus **/
+        FDC_COMM_ERR, 
+        /** Device not found on I2C bus **/
+        FDC_DEV_NOT_FOUND,  
+        /** Channel configuration error **/
+        FDC_CONF_ERR
     } FDC_Error;
     
     /**
+    *   \typedef FDC_SampleRate
     *   \brief Possible sample rates for the FDC1004Q measurements.
     */
     typedef enum {
-        FDC_100_Hz = 1,         // <<< 100 samples per second
-        FDC_200_Hz,                // <<< 200 samples per second    
-        FDC_400_Hz,                // <<< 300 samples per second
+        /** 100 Samples/second sample rate **/
+        FDC_100_Hz = 1,         
+        /** 200 Samples/second sample rate **/
+        FDC_200_Hz,                
+        /** 400 Samples/second sample rate **/
+        FDC_400_Hz,               
     } FDC_SampleRate;
     
+    /**
+    *   \typedef FDC_Channel
+    *   \brief Possible channels for capacitance measurements.
+    */
     typedef enum {
-        FDC_CH_1 = 0x00,    // <<< Capacitance channel 1
-        FDC_CH_2,           // <<< Capacitance channel 2    
-        FDC_CH_3,           // <<< Capacitance channel 3
-        FDC_CH_4            // <<< Capacitance channel 4
+        /** Capacitance channel 1 **/
+        FDC_CH_1 = 0x00,    
+        /** Capacitance channel 2 **/
+        FDC_CH_2,             
+        /** Capacitance channel 3 **/
+        FDC_CH_3,           
+        /** Capacitance channel 4 **/
+        FDC_CH_4            
     } FDC_Channel;
     
+    /**
+    *   \typedef FDC_MeasInput
+    *   \brief Possible inputs for channel configuration.
+    */
     typedef enum {
-        FDC_IN_1,           // <<< Capacitance channel 1
-        FDC_IN_2,           // <<< Capacitance channel 2    
-        FDC_IN_3,           // <<< Capacitance channel 3
-        FDC_IN_4,           // <<< Capacitance channel 4
-        FDC_CAPDAC,
-        FDC_DISABLED
+        /** Capacitance channel 1 **/
+        FDC_IN_1,           
+        /** Capacitance channel 2 **/
+        FDC_IN_2,              
+        /** Capacitance channel 3 **/
+        FDC_IN_3,           
+        /** Capacitance channel 4 **/
+        FDC_IN_4,           
+        /** CAPDAC **/
+        FDC_CAPDAC,         
+        /** Channel disabled - GND **/
+        FDC_DISABLED            
     } FDC_MeasInput;
     
-    typedef enum {
-        FDC_DONE,
-        FDC_NOT_DONE
+    /**
+    *   \typedef FDC_MeasDone
+    *   \brief Typedefs for measurement done check.
+    */
+    typedef enum {      
+        /** Measurement done **/
+        FDC_DONE,       
+        /** Measurement to be completed **/
+        FDC_NOT_DONE    
     } FDC_MeasDone;
 #endif
 

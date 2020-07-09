@@ -324,7 +324,7 @@ FDC_Error FDC_ConfigureMeasurement(FDC_Channel measChannel,
     // Check positive and negative input
     if ( ( neg == pos ) || ( pos > neg) || (capdac > 31) || (pos == FDC_CAPDAC) || (pos == FDC_DISABLED) )
     {
-        return FDC_CONF_ERROR;
+        return FDC_CONF_ERR;
     }
     
     // Read current value in the register
