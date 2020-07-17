@@ -406,7 +406,7 @@ FDC_Error FDC_IsDeviceConnected()
 {
     FDC_Error fdc_error = FDC_COMM_ERR;
     I2C_Connection connection;
-    I2C_ErrorCode error = I2C_Peripheral_IsDeviceConnected(0x50, &connection);
+    I2C_ErrorCode error = I2C_Peripheral_IsDeviceConnected(FDC1004Q_I2C_ADDR, &connection);
     if (error == I2C_NO_ERROR)
     {
         if ( connection == I2C_DEV_CONNECTED)

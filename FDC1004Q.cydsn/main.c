@@ -8,6 +8,9 @@
 #include "FDC1004Q_Defs.h"
 #include "FDC1004Q.h"
 #include "stdio.h"
+#include "Serial_Interface.h"
+
+uint8_t sensor_found = 0;
 
 int main(void)
 {
@@ -18,24 +21,31 @@ int main(void)
     CyDelay(100);
     UART_Start();
     
-    UART_PutString("Started program - FDC1004Q\r\n");
-    
+    //UART_PutString("Started program - FDC1004Q\r\n");
+    UART_PutString("Reading Manufacturer ID\r\n");
     char message[60] = {'\0'};
     uint16_t temp;
     FDC_Error error;
     
-    if (FDC_IsDeviceConnected())
+    for (int i = 0; i < 5; i++)
     {
-        Led_Write(1);
+        if (FDC_IsDeviceConnected())
+        {
+            sensor_found = 1;
+            Led_Write(1);
+            break;
+        }
     }
-    
-    
     
     error = FDC_ReadManufacturerId(&temp);
     if (error == FDC_OK)
     {
         sprintf(message, "Manufacturer ID: 0x%02X\r\n", temp);
         UART_PutString(message);
+    }
+    else
+    {
+        UART_PutString("Could not read manufacturer ID\r\n");
     }
     error = FDC_ReadDeviceId(&temp);
     if (error == FDC_OK)
@@ -57,6 +67,8 @@ int main(void)
     FDC_StopMeasurement(FDC_CH_3);  
     FDC_StopMeasurement(FDC_CH_4);
     
+    Serial_Start();
+    /*
     // Test measurement
     FDC_SetSampleRate(FDC_100_Hz);
     FDC_ConfigureMeasurement(FDC_CH_1, FDC_IN_1, FDC_CAPDAC, 0);
@@ -81,8 +93,26 @@ int main(void)
     FDC_ReadMeasurement(FDC_CH_1, &capacitance);
     sprintf(message, "Capacitance Double (*1000): %d pF\r\n", (int)(capacitance*1000));
     UART_PutString(message);
+    */
+    
     for(;;)
     {
+        if (UART_GetRxBufferSize() > 0)
+        {
+            uint8_t received = UART_GetChar();
+            if (received == 'v')
+            {
+                Serial_SendResetMessage();
+            }
+            else if ( received == 't')
+            {
+                Serial_SendSensorCheckPacket(sensor_found);
+            }
+            else if ( received == 'p')
+            {
+                Serial_SendSampleRatePacket(sensor_found);
+            }
+        }
     }
 }
 
