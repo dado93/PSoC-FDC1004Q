@@ -339,6 +339,9 @@
     */
     FDC_Error FDC_ReadMeasurement(FDC_Channel channel, double* capacitance);
     
+    FDC_Error FDC_ReadCapdacSetting(FDC_Channel channel, uint8_t* capdac);
+    
+    
     /**
     * \brief Read capacitance measurement in double format.
     *

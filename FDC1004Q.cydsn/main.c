@@ -20,22 +20,25 @@ int main(void)
     I2C_Master_Start();
     CyDelay(100);
     UART_Start();
+    UART_Debug_Start();
+    MultiCharCmdTimer_Start();
     
-    //UART_PutString("Started program - FDC1004Q\r\n");
-    UART_PutString("Reading Manufacturer ID\r\n");
     char message[60] = {'\0'};
     uint16_t temp;
     FDC_Error error;
     
     for (int i = 0; i < 5; i++)
     {
-        if (FDC_IsDeviceConnected())
+        if (FDC_IsDeviceConnected() == FDC_OK)
         {
             sensor_found = 1;
             Led_Write(1);
             break;
         }
     }
+    
+    error = FDC_SetSampleRate(FDC_100_Hz);
+
     
     error = FDC_ReadManufacturerId(&temp);
     if (error == FDC_OK)
@@ -47,6 +50,7 @@ int main(void)
     {
         UART_PutString("Could not read manufacturer ID\r\n");
     }
+    
     error = FDC_ReadDeviceId(&temp);
     if (error == FDC_OK)
     {
@@ -54,6 +58,11 @@ int main(void)
         UART_PutString(message);
     }
     
+    FDC_SetGainCalibration(FDC_CH_1, 1.5);
+    FDC_SetGainCalibration(FDC_CH_2, 0.0);
+    FDC_SetGainCalibration(FDC_CH_3, 0.0);
+    FDC_SetGainCalibration(FDC_CH_4, 0.0);
+    /*
     // Read all measurement registers
     uint32_t cap;
     FDC_ReadRawMeasurement(FDC_CH_1, &cap);
@@ -66,6 +75,7 @@ int main(void)
     FDC_StopMeasurement(FDC_CH_2);
     FDC_StopMeasurement(FDC_CH_3);  
     FDC_StopMeasurement(FDC_CH_4);
+    */
     
     Serial_Start();
     /*
@@ -95,24 +105,17 @@ int main(void)
     UART_PutString(message);
     */
     
+    
+    
     for(;;)
     {
         if (UART_GetRxBufferSize() > 0)
         {
             uint8_t received = UART_GetChar();
-            if (received == 'v')
-            {
-                Serial_SendResetMessage();
-            }
-            else if ( received == 't')
-            {
-                Serial_SendSensorCheckPacket(sensor_found);
-            }
-            else if ( received == 'p')
-            {
-                Serial_SendSampleRatePacket(sensor_found);
-            }
+            Serial_ProcessChar(received);
         }
+        
+        Serial_CheckMultiCharCmdTimer();
     }
 }
 

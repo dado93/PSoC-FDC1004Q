@@ -402,10 +402,26 @@ FDC_Error FDC_ReadMeasurement(FDC_Channel channel, double* capacitance)
     return fdc_error;
 }
 
+FDC_Error FDC_ReadCapdacSetting(FDC_Channel channel, uint8_t* capdac)
+{
+    FDC_Error fdc_error = FDC_COMM_ERR;
+    // Read current capdac setting
+    uint8_t temp[2];
+    uint8_t error = I2C_Peripheral_ReadRegisterMulti(FDC1004Q_I2C_ADDR, FDC1004Q_CONF_MEAS1 + channel, 2, temp);
+    if ( error == I2C_NO_ERROR)
+    {
+            // Read current capdac
+            uint16_t temp16 = temp[0] << 8 | temp[1];
+            *capdac = (temp16 >> 5) & 0x1F;
+            fdc_error = FDC_OK; 
+    }
+    return fdc_error;
+}
+
 FDC_Error FDC_IsDeviceConnected()
 {
     FDC_Error fdc_error = FDC_COMM_ERR;
-    I2C_Connection connection;
+    I2C_Connection connection = I2C_DEV_UNCONNECTED;;
     I2C_ErrorCode error = I2C_Peripheral_IsDeviceConnected(FDC1004Q_I2C_ADDR, &connection);
     if (error == I2C_NO_ERROR)
     {
