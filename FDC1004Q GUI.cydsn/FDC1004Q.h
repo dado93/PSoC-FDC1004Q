@@ -314,6 +314,29 @@
     
     
     /**
+    * \brief Configure measurement settings.
+    *   
+    * This function allows to configure the settings for a given channel
+    * of the measurement. 
+    * \param measChannel the measurement channel
+    * \param pos the positive input channel to capacitance digital converter. 
+    * \param neg the negative input channel to capacitance digital converter.
+    * \param capdac value of CAPDAC, that is the capacitance offset (this value is multiplied by 3.125 pF).
+    * \param offset value of capacitance offset
+    * \param gain value of capacitance gain
+    * \return #FDC_Error with value based on the successful communication
+    * \retval #FDC_OK if everything ok
+    * \retval #FDC_COMM_ERR if error occurred during communication
+    * \retval #FDC_CONF_ERR if error in the settings
+    */
+    FDC_Error FDC_ConfigureChannel(FDC_Channel measChannel,
+                                        FDC_MeasInput pos, FDC_MeasInput neg,
+                                        uint8_t capdac,
+                                        int16_t offset,
+                                        uint16_t gain);
+    
+    
+    /**
     * \brief Read capacitance measurement in raw format.
     *
     * This function reads the content of the measurement registers, without doing any
@@ -339,8 +362,68 @@
     */
     FDC_Error FDC_ReadMeasurement(FDC_Channel channel, double* capacitance);
     
-    FDC_Error FDC_ReadCapdacSetting(FDC_Channel channel, uint8_t* capdac);
+    /**
+    * \brief Read current capdac setting.
+    *
+    * This function reads the current value of capdac set in the 
+    * register. The value returned is in raw format, without multiplication
+    * by a factor of 3.125.
+    * \param channel the channel for which the capdac setting must be retrieved.
+    * \param capdact pointer to variable where the capdvac value will be stored.
+    * \return #FDC_Error with value based on the successful communication
+    * \retval #FDC_OK if everything ok
+    * \retval #FDC_COMM_ERR if error occurred during communication
+    */
+    FDC_Error FDC_ReadRawCapdacSetting(FDC_Channel channel, uint8_t* capdac);
     
+    /**
+    * \brief Read current capdac setting in float format.
+    *
+    * This function reads the current value of capdac set in the 
+    * register. The value returned is in float format.
+    * \param channel the channel for which the capdac setting must be retrieved.
+    * \param capdact pointer to variable where the capdvac value will be stored.
+    * \return #FDC_Error with value based on the successful communication
+    * \retval #FDC_OK if everything ok
+    * \retval #FDC_COMM_ERR if error occurred during communication
+    */
+    FDC_Error FDC_ReadCapdacSetting(FDC_Channel channel, float* capdac);
+    
+    /**
+    * \brief Read current positive input channel setting.
+    *
+    * This function reads the current value configured as positive input channel
+    * for the measurement channel of interest.
+    * \param channel the channel for which the setting must be retrieved.
+    * \param input pointer to variable where the positive input channel value will be stored.
+    * \return #FDC_Error with value based on the successful communication
+    * \retval #FDC_OK if everything ok
+    * \retval #FDC_COMM_ERR if error occurred during communication
+    */
+    FDC_Error FDC_ReadPositiveChannelSetting(FDC_Channel channel, FDC_MeasInput* input);
+    
+    /**
+    * \brief Read current negative input channel setting.
+    *
+    * This function reads the current value configured as negative input channel
+    * for the measurement channel of interest.
+    * \param channel the channel for which the setting must be retrieved.
+    * \param input pointer to variable where the negative input channel value will be stored.
+    * \return #FDC_Error with value based on the successful communication
+    * \retval #FDC_OK if everything ok
+    * \retval #FDC_COMM_ERR if error occurred during communication
+    */
+    FDC_Error FDC_ReadNegativeChannelSetting(FDC_Channel channel, FDC_MeasInput* input);
+    
+    /**
+    * \brief Check if new measurement data are available to be read.
+    *
+    * This function checks whether new data are available in the 
+    * measurement registers to be read.
+    * \return #FDC_Error with value based on the successful communication
+    * \retval #FDC_OK if no error occurred
+    */
+    FDC_Error FDC_HasNewData(FDC_MeasDone* done);
     
     /**
     * \brief Read capacitance measurement in double format.

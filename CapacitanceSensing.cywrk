@@ -3,17 +3,22 @@
 <!--This file is machine generated and read. It is not intended to be edited by hand.-->
 <!--Due to this, there is no schema for this file.-->
 <CyGuid_2867d519-54d2-4c01-9830-c51cb08bc3dd type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWorkspaceSerialize" version="5" xml_contents_version="3" name="CapacitanceSensing" persistent="CapacitanceSensing.cywrk" platform="NOT_USED">
-<current_project name=".\FDC1004Q.cydsn\FDC1004Q.cyprj" />
+<current_project name=".\FDC1004Q Rate Testing.cydsn\FDC1004Q Rate Testing.cyprj" />
 <wrkspc_folders />
 <files />
 <projects>
-<v>.\FDC1004Q.cydsn\FDC1004Q.cyprj</v>
+<v>.\FDC1004Q GUI.cydsn\FDC1004Q GUI.cyprj</v>
+<v>.\FDC1004Q Library.cydsn\FDC1004Q Library.cyprj</v>
+<v>.\FDC1004Q Rate Testing.cydsn\FDC1004Q Rate Testing.cyprj</v>
 </projects>
 <workspace_id v="0ab5fd9d-4fed-4fe2-855d-39242c3387a2" />
 <WriteAppVersionLastSavedWith v="4.3.0.1445" />
 <WriteAppMarketingVersionLastSavedWith v="4.3" />
 <CyGuid_dcbd9771-0334-43dc-9cc3-fe99dc3c5316 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWorkspaceSerialize+CyPrjDependencyList" version="4">
-<wrkspc_dependencies />
+<wrkspc_dependencies>
+<wrkspc_dependency project="FDC1004Q Library.cydsn\FDC1004Q Library.cyprj" dependency="..\..\Libraries\AnnotationLibrary\AnnotationLibrary_lib\AnnotationLibrary_lib.cylib\AnnotationLibrary_lib.cyprj" />
+<wrkspc_dependency project="FDC1004Q Rate Testing.cydsn\FDC1004Q Rate Testing.cyprj" dependency="..\..\Libraries\AnnotationLibrary\AnnotationLibrary_lib\AnnotationLibrary_lib.cylib\AnnotationLibrary_lib.cyprj" />
+</wrkspc_dependencies>
 </CyGuid_dcbd9771-0334-43dc-9cc3-fe99dc3c5316>
 <CyGuid_63b68103-67f5-4406-8da6-5c8625765b82 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWorkspaceSerialize+CyIgnoredSystemDepsList" version="1">
 <wrkspc_dependencies />

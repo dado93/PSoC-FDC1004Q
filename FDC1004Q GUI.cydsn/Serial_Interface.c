@@ -14,26 +14,18 @@
 #include "Serial_Interface_Defs.h"
 #include "stdio.h"
 
-#define SENSOR_CHECK_PACKET_ID      0x00
-#define SAMPLE_RATE_PACKET_ID       0x01
-#define MANUFACTURER_ID_PACKET_ID   0x02
-#define DEVICE_ID_PACKET_ID         0x03
-#define CH_SETTINGS_PACKET_ID       0x04
 
-#define CHANNEL_1_REQUEST_PACKET_ID 0xA1
-#define CHANNEL_2_REQUEST_PACKET_ID 0xA2
-#define CHANNEL_3_REQUEST_PACKET_ID 0xA3
-#define CHANNEL_4_REQUEST_PACKET_ID 0xA4
 
 #define Serial_Print(a) UART_PutString(a)
 
 static char multiCmd = 0; 
 static FDC_SampleRate tempSampleRate;
 
-volatile static uint16_t multiCharCmdTimerOverflow = 0;
-bool isMultiCharCmd = false;
-uint8_t numberOfIncomingSettingsProcessedSampleRate = 0;
-uint16_t timerCounter = 0;
+static bool isMultiCharCmd = false;
+static uint8_t numberOfIncomingSettingsProcessedSampleRate = 0;
+static uint8_t numberOfIncomingSettingsProcessedChannelSettings = 0;
+static uint16_t timerCounter = 0;
+static uint8_t optionalArgBuffer6[6];
 
 Serial_Error Serial_Start(void)
 {
@@ -128,11 +120,16 @@ Serial_Error Serial_SendChannelSettings(FDC_Channel channel)
     packet[1] = CH_SETTINGS_PACKET_ID;
     // Read capdac
     uint8_t capdac;
-    error = FDC_ReadCapdacSetting(channel, &capdac);
+    error = FDC_ReadRawCapdacSetting(channel, &capdac);
     // Set channel number    
     packet[2] = channel << 5 | capdac;
+    // Read positive and negative channel
+    FDC_MeasInput input;
+    FDC_ReadPositiveChannelSetting(channel, &input);
     
-    packet[3] = 0;
+    packet[3] =  input << 4;
+    FDC_ReadNegativeChannelSetting(channel, &input);
+    packet[3] |= input;
     // Read offset calibration register
     int16_t offset;
     FDC_ReadRawOffsetCalibration(channel, &offset);
@@ -151,6 +148,30 @@ Serial_Error Serial_SendChannelSettings(FDC_Channel channel)
     return SERIAL_OK;
 }
 
+Serial_Error Serial_SendMeasurementData(void)
+{
+    // Send measurement data
+    uint8_t packet[19];
+    packet[0] = FDC1004Q_SERIAL_PACKET_HEADER;
+    packet[1] = CH_DATA_PACKET_ID;
+    uint32_t rawMeas;
+    uint8_t capdac;
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        FDC_ReadRawMeasurement(i, &rawMeas);
+        FDC_ReadRawCapdacSetting(i, &capdac);
+        packet[2 + 4*(i+1)] = rawMeas >> 24;
+        packet[3 + 4*(i+1)] = rawMeas >> 16;
+        packet[4 + 4*(i+1)] = rawMeas >> 8;
+        packet[5 + 4*(i+1)] = capdac;
+    }
+    
+    packet[18] = FDC1004Q_SERIAL_PACKET_TAIL;
+    UART_PutArray(packet, 19);
+    
+    return SERIAL_OK;
+}
+
 Serial_Error Serial_ProcessChar(char received)
 {
     if (Serial_CheckMultiCharCmdTimer())
@@ -158,8 +179,11 @@ Serial_Error Serial_ProcessChar(char received)
         switch(Serial_GetMultiCharCommand())
         {
             case MULTI_CHAR_CMD_SETTINGS_SAMPLE_RATE:
-            Serial_ProcessSampleRate(received);
-            break;
+                Serial_ProcessSampleRate(received);
+                break;
+            case MULTI_CHAR_CMD_SETTINGS_CHANNEL:
+                Serial_ProcessChannelSettings(received);
+                break;
         }
     }
     else
@@ -181,11 +205,38 @@ Serial_Error Serial_ProcessChar(char received)
             case FDC1004Q_SERIAL_RESET_CMD:
                 Serial_SendResetMessage();
                 break;
-             
+            case FDC1004Q_SERIAL_CMD_CH_SETTINGS_1:
+                Serial_SendChannelSettings(FDC_CH_1);
+                break;
+            case FDC1004Q_SERIAL_CMD_CH_SETTINGS_2:
+                Serial_SendChannelSettings(FDC_CH_2);
+                break;
+            case FDC1004Q_SERIAL_CMD_CH_SETTINGS_3:
+                Serial_SendChannelSettings(FDC_CH_3);
+                break;
+            case FDC1004Q_SERIAL_CMD_CH_SETTINGS_4:
+                Serial_SendChannelSettings(FDC_CH_4);
+                break;
+            case FDC1004Q_SERIAL_CMD_CH_MEASURE_1:
+                FDC_InitMeasurement(FDC_CH_1);
+                break;
+            case FDC1004Q_SERIAL_CMD_CH_MEASURE_2:
+                FDC_InitMeasurement(FDC_CH_2);
+                break;
+            case FDC1004Q_SERIAL_CMD_CH_MEASURE_3:
+                FDC_InitMeasurement(FDC_CH_3);
+                break;
+            case FDC1004Q_SERIAL_CMD_CH_MEASURE_4:
+                FDC_InitMeasurement(FDC_CH_4);
+                break;
+                
             case FDC1004Q_SERIAL_CMD_SAMPLE_RATE_SET:
                 Serial_StartMultiCharCmdTimer(MULTI_CHAR_CMD_SETTINGS_SAMPLE_RATE);
                 numberOfIncomingSettingsProcessedSampleRate = 1;
                 break;
+            case FDC1004Q_SERIAL_CMD_CH_SETTINGS_SET:
+                Serial_StartMultiCharCmdTimer(MULTI_CHAR_CMD_SETTINGS_CHANNEL);
+                numberOfIncomingSettingsProcessedChannelSettings = 1;
         }
     }
     
@@ -281,6 +332,91 @@ void Serial_ProcessSampleRate(char c)
         Serial_EndMultiCharCmdTimer();
         numberOfIncomingSettingsProcessedSampleRate = 0;
         FDC_SetSampleRate(tempSampleRate);   
+    }
+    
+}
+
+void Serial_ProcessChannelSettings(char c)
+{
+    if (c == FDC1004Q_SERIAL_CMD_CH_SETTINGS_LATCH && numberOfIncomingSettingsProcessedChannelSettings < FDC1004Q_SERIAL_NUMBER_OF_BYTES_CH_SETTINGS - 1)
+    {
+        numberOfIncomingSettingsProcessedChannelSettings = 0;
+        Serial_EndMultiCharCmdTimer();
+        Serial_PrintFailure();
+        Serial_PrintAll("Too few chars\r\n");
+        Serial_SendEOT();
+        return;        
+    }
+    switch(numberOfIncomingSettingsProcessedChannelSettings)
+    {
+        case 1:   
+            optionalArgBuffer6[0] = c;
+            break;
+        case 2:
+            optionalArgBuffer6[1] = c;
+            break;
+        case 3:
+            optionalArgBuffer6[2] = c;
+            break;
+        case 4:
+            optionalArgBuffer6[3] = c;
+            break;
+        case 5:
+            optionalArgBuffer6[4] = c;
+            break;
+        case 6:
+            optionalArgBuffer6[5] = c;
+            break;
+        case 7: // Latch command
+            if ( c != FDC1004Q_SERIAL_CMD_CH_SETTINGS_LATCH)
+            {
+                numberOfIncomingSettingsProcessedChannelSettings = 0;
+                Serial_EndMultiCharCmdTimer();
+                Serial_PrintFailure();
+                Serial_PrintAll("Too few chars\r\n");
+                Serial_SendEOT();
+            }
+            break;
+        default:
+            // Should have been completed
+            numberOfIncomingSettingsProcessedChannelSettings = 0;
+            Serial_EndMultiCharCmdTimer();
+            Serial_PrintFailure();
+            Serial_PrintAll("8th char not X\r\n");
+            Serial_SendEOT();
+    }
+    
+    numberOfIncomingSettingsProcessedChannelSettings += 1;
+    
+    if (numberOfIncomingSettingsProcessedChannelSettings == FDC1004Q_SERIAL_NUMBER_OF_BYTES_CH_SETTINGS)
+    {
+        // Get number of channel
+        uint8_t ch = (optionalArgBuffer6[0] >> 5) & 0x03;
+        // Get capdac setting
+        uint8_t capdac = optionalArgBuffer6[0] & 0x1F;
+        // Get positive and negative input
+        uint8_t pos = optionalArgBuffer6[1] >> 4;
+        uint8_t neg = optionalArgBuffer6[1] & 0xF;
+        // Get offset
+        int16_t offset = optionalArgBuffer6[2] << 8 | optionalArgBuffer6[3];
+        // Get gain
+        uint16_t gain = optionalArgBuffer6[4] << 8 | optionalArgBuffer6[5];
+        
+        FDC_Error error = FDC_ConfigureChannel(ch, pos, neg, capdac, offset, gain);
+        if ( error == FDC_OK)
+        {
+            Serial_PrintSuccess();
+            Serial_Print("Channel settings set to: \r\n");
+            Serial_SendEOT();
+        }
+        else
+        {
+            Serial_PrintFailure();
+            Serial_Print("Could not set channel settings\r\n");
+            Serial_SendEOT();
+        }
+        Serial_EndMultiCharCmdTimer();
+        numberOfIncomingSettingsProcessedChannelSettings = 0;
     }
     
 }

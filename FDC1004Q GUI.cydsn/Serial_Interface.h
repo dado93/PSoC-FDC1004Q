@@ -20,12 +20,16 @@
 #else
     #define Print_Debug(s) 
 #endif
+
 /**
 *   @typedef ChannelPacket
 *   @brief Struct defining channel settings to be sent as a packet
 *
 *   This struct defines the data relative to a packet that are
 *   sent or received via serial interface.
+*   The channel packet is structured as follows:
+*
+*   
 */
 typedef struct {
     uint8_t numberCapdac;
@@ -46,18 +50,31 @@ typedef enum {
 
 typedef enum  {
     MULTI_CHAR_CMD_NONE,
-    MULTI_CHAR_CMD_PROCESSING_INCOMING_SETTINGS_CHANNEL,
-    MULTI_CHAR_CMD_PROCESSING_INCOMING_SETTINGS_LEADOFF,
-    MULTI_CHAR_CMD_SERIAL_PASSTHROUGH,
-    MULTI_CHAR_CMD_SETTINGS_BOARD_MODE,
+    MULTI_CHAR_CMD_SETTINGS_CHANNEL,
     MULTI_CHAR_CMD_SETTINGS_SAMPLE_RATE,
-    MULTI_CHAR_CMD_INSERT_MARKER
   } MULTI_CHAR_COMMAND;
 
+/**
+*   @brief Start Serial interface.
+*
+*   This function starts the serial interface so that it 
+*   can be used for communication with another device.
+*
+*/
 Serial_Error Serial_Start(void);
 
+/**
+*   @brief Send a reset message via Serial.
+*
+*   This function sends a string on the serial port
+*   so that a check can be done on the string from another device
+*   to be sure that a connection was established.
+*/
 Serial_Error Serial_SendResetMessage(void);
 
+/**
+*   @brief Send a packet containing information about sensor presence.
+*/
 Serial_Error Serial_SendSensorCheckPacket(void);
 
 Serial_Error Serial_SendManufacturerId(void);
@@ -69,6 +86,10 @@ Serial_Error Serial_SendSampleRate(void);
 Serial_Error Serial_SendChannelSettings(FDC_Channel channel);
 
 Serial_Error Serial_ProcessChar(char received);
+
+Serial_Error Serial_SendMeasurementData(void);
+
+void Serial_ProcessChannelSettings(char received);
 
 void Serial_SendEOT(void);
 void Serial_PrintAll(const char* c);
@@ -82,6 +103,7 @@ char Serial_GetNumberForAsciiChar(char c);
 char Serial_GetMultiCharCommand(void);
 bool Serial_CheckMultiCharCmdTimer(void);
 void Serial_StartMultiCharCmdTimer(char);
+
 
 CY_ISR_PROTO(ISR_Byte_Received);
 

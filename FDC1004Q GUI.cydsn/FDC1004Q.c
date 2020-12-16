@@ -194,8 +194,7 @@ FDC_Error FDC_ReadRawGainCalibration(FDC_Channel channel, uint16_t* gain)
         FDC1004Q_GAIN_CAL_CIN1 + channel, 2, temp);
     if (error == I2C_NO_ERROR)
     {
-        gain[0] = temp[0];
-        gain[1] = temp[1];
+        *gain = temp[0] << 8 | temp[1];
         fdc_error = FDC_OK;
     }
     return fdc_error;
@@ -354,6 +353,19 @@ FDC_Error FDC_ConfigureMeasurement(FDC_Channel measChannel,
     return fdc_error;
 }
 
+FDC_Error FDC_ConfigureChannel(FDC_Channel measChannel,
+                                        FDC_MeasInput pos, FDC_MeasInput neg,
+                                        uint8_t capdac,
+                                        int16_t offset,
+                                        uint16_t gain)
+{
+    FDC_Error error = FDC_COMM_ERR;
+    error = FDC_SetRawOffsetCalibration(measChannel, gain);
+    error = FDC_SetOffsetCalibration(measChannel, offset);
+    error = FDC_ConfigureMeasurement(measChannel, pos, neg, capdac);
+    return error;
+}
+
 FDC_Error FDC_ReadRawMeasurement(FDC_Channel channel, uint32_t* capacitance)
 {
     uint8_t temp[2];
@@ -402,7 +414,7 @@ FDC_Error FDC_ReadMeasurement(FDC_Channel channel, double* capacitance)
     return fdc_error;
 }
 
-FDC_Error FDC_ReadCapdacSetting(FDC_Channel channel, uint8_t* capdac)
+FDC_Error FDC_ReadRawCapdacSetting(FDC_Channel channel, uint8_t* capdac)
 {
     FDC_Error fdc_error = FDC_COMM_ERR;
     // Read current capdac setting
@@ -414,6 +426,71 @@ FDC_Error FDC_ReadCapdacSetting(FDC_Channel channel, uint8_t* capdac)
             uint16_t temp16 = temp[0] << 8 | temp[1];
             *capdac = (temp16 >> 5) & 0x1F;
             fdc_error = FDC_OK; 
+    }
+    return fdc_error;
+}
+
+FDC_Error FDC_ReadCapdacSetting(FDC_Channel channel, float* capdac)
+{
+    FDC_Error fdc_error = FDC_COMM_ERR;
+    // Read current capdac setting
+    uint8_t temp[2];
+    uint8_t error = I2C_Peripheral_ReadRegisterMulti(FDC1004Q_I2C_ADDR, FDC1004Q_CONF_MEAS1 + channel, 2, temp);
+    if ( error == I2C_NO_ERROR)
+    {
+            // Read current capdac
+            uint16_t temp16 = temp[0] << 8 | temp[1];
+            *capdac = (temp16 >> 5) & 0x1F;
+            *capdac *= FDC_CAPDAC_FACTOR;
+            fdc_error = FDC_OK; 
+    }
+    return fdc_error;
+}
+FDC_Error FDC_ReadPositiveChannelSetting(FDC_Channel channel, FDC_MeasInput* input)
+{
+    FDC_Error fdc_error = FDC_COMM_ERR;
+    // Read current capdac setting
+    uint8_t temp[2];
+    
+    uint8_t error = I2C_Peripheral_ReadRegisterMulti(FDC1004Q_I2C_ADDR, FDC1004Q_CONF_MEAS1 + channel, 2, temp);
+    if ( error == I2C_NO_ERROR)
+    {
+        uint16_t temp16 = temp[0] << 8 | temp[1];
+        *input = (temp16 >> 13) & 0x07;
+        fdc_error = FDC_OK;
+    }
+    return fdc_error;
+}
+
+
+FDC_Error FDC_ReadNegativeChannelSetting(FDC_Channel channel, FDC_MeasInput* input)
+{
+    FDC_Error fdc_error = FDC_COMM_ERR;
+    // Read current capdac setting
+    uint8_t temp[2];
+    
+    uint8_t error = I2C_Peripheral_ReadRegisterMulti(FDC1004Q_I2C_ADDR, FDC1004Q_CONF_MEAS1 + channel, 2, temp);
+    if ( error == I2C_NO_ERROR)
+    {
+        uint16_t temp16 = temp[0] << 8 | temp[1];
+        *input = (temp16 >> 10) & 0x07;
+        fdc_error = FDC_OK;
+    }
+    return fdc_error;
+}
+
+FDC_Error FDC_HasNewData(FDC_MeasDone* done)
+{
+    // Check if there are new measurement data
+    uint8_t temp[2];    // temp buffer
+    FDC_Error fdc_error = FDC_COMM_ERR;     // error
+    // Read I2C register
+    uint8_t error = I2C_Peripheral_ReadRegisterMulti(FDC1004Q_I2C_ADDR, FDC1004Q_FDC_CONF, 2, temp);
+    if (error == I2C_NO_ERROR)
+    {
+        // Mask with last 4 bits
+        *done = temp[1] & 0x07;
+        fdc_error = FDC_OK;
     }
     return fdc_error;
 }
