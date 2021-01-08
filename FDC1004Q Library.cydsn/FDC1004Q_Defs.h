@@ -1,12 +1,17 @@
 /**
 *   \file FDC1004Q_Defs.h
-*   \brief Macros the FDC1004Q component.
+*   \brief Register map for the FDC1004Q component.
 *
 *   \author Davide Marzorati
 */
 
-#ifndef __FDC1004Q_DEFS_H__
-    #define __FDC1004Q_DEFS_H__
+#ifndef __FDC1004Q_REGMAP_H__
+    #define __FDC1004Q_REGMAP_H__
+    
+    /**
+    *   \brief CAPDAC multiplying factor.
+    */
+    #define FDC_CAPDAC_FACTOR 3.125
     
     // =============================================
     //              FDC1004Q REGISTERS

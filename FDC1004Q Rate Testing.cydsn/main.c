@@ -80,23 +80,58 @@ int main(void)
     FDC_StopMeasurement(FDC_CH_4);
 
     FDC_SetSampleRate(FDC_400_Hz);
-    FDC_ConfigureMeasurementInput(FDC_CH_1, FDC_IN_1, FDC_DISABLED, 0);
-    FDC_EnableRepeatMeasurement(FDC_RP_CH_1);
+    FDC_ConfigureMeasurementInput(FDC_CH_1, FDC_IN_1, FDC_CAPDAC, 0);
+    FDC_EnableRepeatMeasurement(FDC_RP_CH_1 | FDC_RP_CH_2 | FDC_RP_CH_3 | FDC_RP_CH_4);
     
     uint8_t done = 0;
     uint16_t num_samples = 0;
     uint32_t start_time, end_time = 0;
     uint32_t capacitance;
-    
+    uint16_t cum_samples = 0;
+    uint8_t data_packet[24];
+    data_packet[0] = 0xA1;
+    data_packet[23] = 0xC0;
+    data_packet[1] = 0x00;
     for(;;)
     {
+        start_time = Timer_Rate_ReadCounter();
+        while (cum_samples < 100)
+        {
+            FDC_HasNewData(&done);
+            if ( done == 0x0F)
+            {
+                FDC_ReadRawMeasurement(FDC_CH_1, &capacitance);
+                FDC_ReadRawMeasurement(FDC_CH_2, &capacitance);
+                FDC_ReadRawMeasurement(FDC_CH_3, &capacitance);
+                FDC_ReadRawMeasurement(FDC_CH_4, &capacitance);
+                num_samples = num_samples + 1;
+                if (num_samples == 1)
+                {
+                    num_samples = 0;
+                    cum_samples += 1;
+                }
+            }
+        }
+        
+        end_time = Timer_Rate_ReadCounter();
+        int32_t diff = start_time - end_time;
+        float sr = cum_samples / ((float)diff/1000000.0);
+        sprintf(message, "Sr: %d.%d Hz\r\n", (int)(sr), ((int)(sr*100))%100);
+        UART_PutString(message);
+        num_samples = 0;
+        cum_samples = 0;
+        
+        /*
         start_time = Timer_Rate_ReadCounter();
         while (num_samples < 100)
         {
             FDC_HasNewData(&done);
-            if ( done > 0)
+            if ( done == 0x0F)
             {
                 FDC_ReadRawMeasurement(FDC_CH_1, &capacitance);
+                FDC_ReadRawMeasurement(FDC_CH_2, &capacitance);
+                FDC_ReadRawMeasurement(FDC_CH_3, &capacitance);
+                FDC_ReadRawMeasurement(FDC_CH_4, &capacitance);
                 num_samples = num_samples + 1;
             }
         }
@@ -104,9 +139,10 @@ int main(void)
         end_time = Timer_Rate_ReadCounter();
         int32_t diff = start_time - end_time;
         float sr = num_samples / ((float)diff/1000000.0);
-        sprintf(message, "Sr: %d.%d\r\n", (int)(sr), ((int)(sr*100))%100);
+        sprintf(message, "Sr: %d.%d Hz\r\n", (int)(sr), ((int)(sr*100))%100);
         UART_PutString(message);
         num_samples = 0;
+        */
     }
 }
 

@@ -295,7 +295,7 @@ uint8_t FDC_StopMeasurement(uint8_t channel)
         // Clear bit of channel
         temp[1] &= ~ (1 << (7 - channel));
        
-        error = FDC_ReadRegister(FDC1004Q_FDC_CONF, temp);
+        error = FDC_WriteRegister(FDC1004Q_FDC_CONF, temp);
     }
     return error;
 }
@@ -351,7 +351,7 @@ uint8_t FDC_DisableRepeatMeasurement(void)
     if (error == FDC_OK)
     {
         // Clear bit 8
-        temp[0] &= ~(1 << 8);
+        temp[0] &= 0xFE;
         error = FDC_WriteRegister(FDC1004Q_FDC_CONF, temp);
     }
     return error;  

@@ -468,6 +468,16 @@
     */
     uint8_t FDC_ReadMeasurement(uint8_t channel, double* capacitance);
     
+    /**
+    *   \brief Convert raw capacitance measurement in double format.
+    *
+    *   This function converts a raw measurement in dobule format.
+    *   CAPDAC value is not added to the measurement, so it is necessary
+    *   to add it after the conversion is completed.
+    *   \param capacitance the raw capacitance value
+    *   \return capacitance value converted in double format
+    */
+    double FDC_ConvertRawMeasurement(uint32_t capacitance);
 
     /**
     *    \brief Check if new measurement data are available to be read.

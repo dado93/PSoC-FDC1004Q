@@ -14,8 +14,6 @@
 #include "Serial_Interface_Defs.h"
 #include "stdio.h"
 
-
-
 #define Serial_Print(a) UART_PutString(a)
 
 static char multiCmd = 0; 

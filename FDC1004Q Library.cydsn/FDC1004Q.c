@@ -30,11 +30,13 @@
 #define FDC_FDC_CONF_RESET_BIT 15
 
 /**
-*   \brief CAPDAC multiplying factor.
+*   \brief Number of fractional bits in offset register.
 */
-#define FDC_CAPDAC_FACTOR 3.125
-
 #define FIXED_POINT_FRACTIONAL_BITS_OFFSET 11
+
+/**
+*   \brief Number of fractional bits in gain register.
+*/
 #define FIXED_POINT_FRACTIONAL_BITS_GAIN   14
 
 // Converts unsigned fixed point format to double
@@ -67,7 +69,6 @@ void FDC_Stop(void)
 {
     I2C_Peripheral_Stop();
 }
-
 // Check if device is connected
 uint8_t FDC_IsDeviceConnected(void)
 {
@@ -295,7 +296,7 @@ uint8_t FDC_StopMeasurement(uint8_t channel)
         // Clear bit of channel
         temp[1] &= ~ (1 << (7 - channel));
        
-        error = FDC_ReadRegister(FDC1004Q_FDC_CONF, temp);
+        error = FDC_WriteRegister(FDC1004Q_FDC_CONF, temp);
     }
     return error;
 }
@@ -351,7 +352,7 @@ uint8_t FDC_DisableRepeatMeasurement(void)
     if (error == FDC_OK)
     {
         // Clear bit 8
-        temp[0] &= ~(1 << 8);
+        temp[0] &= 0xFE;
         error = FDC_WriteRegister(FDC1004Q_FDC_CONF, temp);
     }
     return error;  
@@ -463,6 +464,18 @@ uint8_t FDC_ReadMeasurement(uint8_t channel, double* capacitance)
     return error;
 }
 
+// Convert raw to double
+double FDC_ConvertRawMeasurement(uint32_t capacitance)
+{
+    double temp_cap = (double)(capacitance >> 8);
+    if (temp_cap > ( (1 << 23) -1))
+    {
+        temp_cap -= ( 1 << 24);
+    }
+    temp_cap /= (2<<18);
+    return temp_cap;
+}
+
 uint8_t FDC_ReadRawCapdacSetting(uint8_t channel, uint8_t* capdac)
 {
     if (channel > FDC_CH_4)
@@ -537,7 +550,7 @@ uint8_t FDC_HasNewData(uint8_t* done)
     if (error == FDC_OK)
     {
         // Mask with last 4 bits
-        *done = temp[1] & 0x07;
+        *done = temp[1] & 0xF;
     }
     return error;
 }
