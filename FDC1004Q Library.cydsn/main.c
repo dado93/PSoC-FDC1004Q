@@ -53,7 +53,7 @@ int main(void)
     
     // Set the sample rate to the default value
     // of 100 Hz
-    uint8_t error = FDC_SetSampleRate(FDC_100_Hz);
+    uint8_t error = FDC_SetSampleRate(FDC_400_Hz);
 
     
     error = FDC_ReadManufacturerId(&temp);
@@ -74,17 +74,6 @@ int main(void)
         UART_PutString(message);
     }
     
-    /*
-    FDC_SetOffsetCalibration(FDC_CH_1, 0.0);
-    FDC_SetOffsetCalibration(FDC_CH_2, 0.0);
-    FDC_SetOffsetCalibration(FDC_CH_3, 0.0);
-    FDC_SetOffsetCalibration(FDC_CH_4, 0.0);
-    
-    FDC_SetGainCalibration(FDC_CH_1, 0.0);
-    FDC_SetGainCalibration(FDC_CH_2, 0.0);
-    FDC_SetGainCalibration(FDC_CH_3, 0.0);
-    FDC_SetGainCalibration(FDC_CH_4, 0.0);
-    */
     // Disable all measurements
     FDC_DisableRepeatMeasurement();
     // Read all measurement registers
@@ -97,8 +86,7 @@ int main(void)
     FDC_ReadRawMeasurement(FDC_CH_2, &cap);
     FDC_ReadRawMeasurement(FDC_CH_3, &cap);
     FDC_ReadRawMeasurement(FDC_CH_4, &cap);
-    
-    // Test measurement
+
     FDC_ConfigureMeasurementInput(FDC_CH_1, FDC_IN_1, FDC_CAPDAC, 0);
     FDC_ConfigureMeasurementInput(FDC_CH_2, FDC_IN_2, FDC_CAPDAC, 0);
     FDC_ConfigureMeasurementInput(FDC_CH_3, FDC_IN_3, FDC_CAPDAC, 0);
@@ -119,11 +107,11 @@ int main(void)
     uint8_t counter = 0;
     
     
-    
     for(;;)
     {
         uint8_t temp[2];
         I2C_Peripheral_ReadRegisterMulti(0x50, 0x0C, 2, temp);
+        
         if ( (temp[1] & 0xF) == 0x0F)
         {
             counter ++;
@@ -134,17 +122,23 @@ int main(void)
             {
                 for (uint8_t ch = 0; ch < 4; ch++)
                 {
-                sprintf(msg, "%1d | %2d - %3d.%02d |\n", ch, capdac_values[ch],
+                    sprintf(msg, "%1d | %2d - %3d.%02d |\n", ch, capdac_values[ch],
                                                     (int)(capacitance_values[ch]), 
                                                     ((int)(capacitance_values[ch]*100))%100);
-                UART_PutString(msg);
+                    UART_PutString(msg);
                 }
                 UART_PutString("\n");
                 counter = 0;
+                
+                for (uint8 ch = 0; ch < 4; ch++)
+                {
+                    capdac_values[ch] = 0;
+                    FDC_ConfigureMeasurementInput(ch, ch, FDC_CAPDAC, capdac_values[ch]);
+                    
+                }
             }
             
         }
-            
     }
 }
 
@@ -153,24 +147,18 @@ void Sensors_ProcessCapacitanceData(void)
     for (uint8_t ch = 0; ch < 4; ch++)
     {
         FDC_ReadMeasurement(ch, &capacitance_values[ch]);
-        // CAPDAC 0 --> greater than 15
-        // CAPDAC 1 --> greater than 18.125
+        
         if ( capacitance_values[ch] > (15 + ((capdac_values[ch]) * FDC_CAPDAC_FACTOR)))
         {
             // Increase CAPDAC
-            capdac_values[ch] += 1;
-            capdac_values[ch] &= 0x1F;
-            FDC_ConfigureMeasurementInput(ch, ch, FDC_CAPDAC, capdac_values[ch]);
-        }
-        else if (capdac_values[ch] != 0)
-        {
-            // Capacitance = 10 pF --> CAPDAC currently set to 10 (31.125 pF offset)
-            // 
-            if (capacitance_values[ch] < (15 + ((capdac_values[ch]) * FDC_CAPDAC_FACTOR)))
+            if (capdac_values[ch] < 31)
             {
+                capdac_values[ch] += 1;
+                //capdac_values[ch] &= 0x1F;
                 FDC_ConfigureMeasurementInput(ch, ch, FDC_CAPDAC, capdac_values[ch]);
             }
         }
+        
     }
 }
 

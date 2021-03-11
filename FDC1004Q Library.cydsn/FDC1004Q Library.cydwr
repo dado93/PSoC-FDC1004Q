@@ -3361,7 +3361,7 @@
     </Group>
     <Group key="1425177d-0d0e-4468-8bcc-e638e5509a9b">
       <Group key="0">
-        <Data key="Port Format" value="2,3" />
+        <Data key="Port Format" value="2,5" />
       </Group>
     </Group>
     <Group key="cf5b3782-316f-4e51-b6e8-7a99982af5af">
@@ -3376,7 +3376,7 @@
     </Group>
     <Group key="ed092b9b-d398-4703-be89-cebf998501f6">
       <Group key="0">
-        <Data key="Port Format" value="2,4" />
+        <Data key="Port Format" value="2,6" />
       </Group>
     </Group>
     <Group key="UnAssigned Pins" />
