@@ -10,6 +10,7 @@
 #include "stdio.h"
 
 void Sensors_ProcessCapacitanceData(void);
+
 uint8_t capdac_values[4] = {0,0,0,0};
 double capacitance_values[4] = {0,0,0,0};
 
@@ -29,6 +30,8 @@ int main(void)
     char message[60] = {'\0'};
     uint16_t temp;
     uint32_t cap;
+    uint8_t new_data = 0;
+    uint8_t counter = 0;
     
     for (uint8_t reg = 0; reg < 0x14; reg++)
     {
@@ -102,34 +105,37 @@ int main(void)
         UART_PutString(message);
     }
     
-    uint8_t new_data = 0;
-    char msg[30];
-    uint8_t counter = 0;
+    
     
     
     for(;;)
     {
+        // Read register to determine if we have new data
         uint8_t temp[2];
         I2C_Peripheral_ReadRegisterMulti(0x50, 0x0C, 2, temp);
         
+        // We have new data from all four channels
         if ( (temp[1] & 0xF) == 0x0F)
         {
+            // Counter to avoid sending a packet every time
             counter ++;
             
             // Tune CAPDAC
             Sensors_ProcessCapacitanceData();
             if ( counter == 100)
             {
+                // Print out capacitance and CAPDAC
                 for (uint8_t ch = 0; ch < 4; ch++)
                 {
-                    sprintf(msg, "%1d | %2d - %3d.%02d |\n", ch, capdac_values[ch],
+                    sprintf(message, "%1d | %2d - %3d.%02d |\n", ch, capdac_values[ch],
                                                     (int)(capacitance_values[ch]), 
                                                     ((int)(capacitance_values[ch]*100))%100);
-                    UART_PutString(msg);
+                    UART_PutString(message);
                 }
                 UART_PutString("\n");
                 counter = 0;
                 
+                // Reset CAPDAC value
                 for (uint8 ch = 0; ch < 4; ch++)
                 {
                     capdac_values[ch] = 0;
@@ -146,6 +152,7 @@ void Sensors_ProcessCapacitanceData(void)
 {
     for (uint8_t ch = 0; ch < 4; ch++)
     {
+        // Read measurement
         FDC_ReadMeasurement(ch, &capacitance_values[ch]);
         
         if ( capacitance_values[ch] > (15 + ((capdac_values[ch]) * FDC_CAPDAC_FACTOR)))

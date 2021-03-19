@@ -96,10 +96,11 @@ uint8_t FDC_Reset(void)
 {
     // Read FDC register, set RESET bit, write FDC register
     uint8_t temp[2];
+    uint16_t register_value = 0;
     uint8_t error = FDC_ReadRegister(FDC1004Q_FDC_CONF, temp);
     if (error == FDC_OK)
     {
-        temp[0] |= 1 << FDC_FDC_CONF_RESET_BIT;
+        temp[0] |= 1 << (FDC_FDC_CONF_RESET_BIT-8);
         error = FDC_WriteRegister(FDC1004Q_FDC_CONF, temp);
         // Wait for reset to be completed
         uint8_t flag = 1;
@@ -110,7 +111,8 @@ uint8_t FDC_Reset(void)
             {
                 break;
             }
-            flag = (temp[0] & 0x8000) > 0 ? 1 : 0;
+            uint16_t register_value = temp[0] << 8 | temp[1];
+            flag = (register_value & 0x8000) > 0 ? 1 : 0;
         } while (flag == 1);
     }
     return error; 
@@ -404,8 +406,8 @@ uint8_t FDC_ConfigureMeasurement(uint8_t meas_channel,
 {
     if (meas_channel > FDC_CH_4)
         return FDC_CONF_ERR;
-    uint8_t error = FDC_SetRawOffsetCalibration(meas_channel, gain);
-    error = FDC_SetOffsetCalibration(meas_channel, offset);
+    uint8_t error = FDC_SetRawGainCalibration(meas_channel, gain);
+    error = FDC_SetRawOffsetCalibration(meas_channel, offset);
     error = FDC_ConfigureMeasurementInput(meas_channel, pos_channel, neg_channel, capdac);
     return error;
 }
@@ -625,22 +627,22 @@ uint8_t FDC_WriteRegister(uint8_t reg_addr, uint8_t* data)
 //                         HELPER FUNCTIONS
 // ===================================================================
 
-inline float fixed_to_float_unsigned(uint16_t input, uint8_t fract_bits)
+float fixed_to_float_unsigned(uint16_t input, uint8_t fract_bits)
 {
     return ((float)input / (float)(1 << fract_bits));
 }
 
-inline int16_t float_to_fixed_unsigned(float input, uint8_t fract_bits)
+int16_t float_to_fixed_unsigned(float input, uint8_t fract_bits)
 {
     return (uint16_t)(input * (1 << fract_bits));
 }
 
-inline float fixed_to_float_signed(int16_t input, uint8_t fract_bits)
+float fixed_to_float_signed(int16_t input, uint8_t fract_bits)
 {
     return ((float)input / (float)(1 << fract_bits));
 }
 
-inline int16_t float_to_fixed_signed(float input, uint8_t fract_bits)
+int16_t float_to_fixed_signed(float input, uint8_t fract_bits)
 {
     return (int16_t)(input * (1 << fract_bits));
 }
